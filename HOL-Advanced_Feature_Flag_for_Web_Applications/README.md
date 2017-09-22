@@ -1,670 +1,300 @@
-HOL - Advanced Feature Flag for Web Applications
-====================================================================================
+HOL - Usage analysis for web applications with Application Insights
+===================================================================
+Users are reporting slow response times on the PartsUnlimited website. None of our current telemetry is logging custom events. We want to track what items are being removed from the cart and how long it is taking from the site. We also want to dive a bit deeper in to our current analytic reports and dig up some useful data to provide a better experience for our users.
 
-There's a big sales initiative coming up next month to assist with a much anticipated product release. In the past infrastructure stability has been a massive concern and we have lost many customers with downtime and slow server response times. This time around we have a plan to stagger the release to different regions at different times to try distribute the load. You have been tasked with implementing the solution and will take advantage of feature flags to accomplish it.
-
-Note: [Launch Darkly](https://launchdarkly.com/) is a great option for more advanced feature flag management. Version 3.0.0 of the Launch Darkly SDK supports .NET core.
+## TEST ADDD !!!!!!: ###
 
 ### Pre-requisites: ###
-- Visual Studio 2015 Update 3 or higher
+- [.Net Core](https://www.microsoft.com/net/core#windows) SDK
 
-- [.Net Core 1.0.1 SDK](https://www.microsoft.com/net/core#windows) installed
 
 ### Tasks Overview: ###
+**Task 1. Set up Application Insights for PartsUnlimited** This will walk through creating an Application Insights instance in Azure and connecting it to the PartsUnlimited solution.
 
-1. Add the back-end code required for feature flags - In this task we will go through the steps required to create advanced feature flags which are region and time based.
+**Task 2. Create a custom telemetry event on the client side** In this task you will set the App Insights key and create a custom event tracker, so that client side's JavaScript can start logging events.
 
-2. Try it out! - In this task we will see our feature flag in action, simulating a staggered release to countries.
+**Task 3. Create a custom telemetry event on the server side** In this task you will create an Application Insights telemetry provider which will log data on the server side of the PartsUnlimited's website.
 
-### Task 1: Add the back-end code required for feature flags
+**Task 4. Trigger some events** This task will walk you through generating some data for the next task based on the logging we have set up in the previous task.
 
-**Step 1.** Clone the PartsUnlimited repository to a local directory.
+**Task 5. Build a custom query to view performance metrics and data** Once you have generated data to work with, this step will walk you through where this data can be found and how to query it.
 
-* Open a command line (one that supports Git) and navigate to the directory where you want to store your local repositories. For example in a Windows OS, you can create and navigate to `C:\Source\Repos`.
+###Task 1: Set up Application Insights for PartsUnlimited
+Configure Application Insights with PartsUnlimited solution by following these steps: [Application Insights - Getting Started](https://github.com/Microsoft/ApplicationInsights-aspnetcore/wiki/Getting-Started)  
 
-* Clone the repository with the following command:
+### Task 2: Create a custom telemetry event on the client side
+Let's say we want to see how often people are removing items from the cart and how long it is taking for the system to complete this action.
 
-    git clone https://github.com/Microsoft/PartsUnlimited.git
-	> After a few seconds of downloading, all of the code should now be on your local machine.
+**Step 1.**
+We need to make sure we have the Application Insights script included in the application. This should already exist in the PartsUnlimited solution under wwwroot/Scripts/AppInsights.js
 
-* Move into the repository directory that was just created. In a Windows OS, you can use this command:
+We also want to check the config.json and ensure our Application Insights InstrumentationKey is correct. This file should be sitting under the root of the PartsUnlimitedWebsite project.
 
-    cd PartsUnlimited
+![](<media/config-file-instrumentation-key.png>)
 
-**Step 2.** Open the PartsUnlimited solution with Visual Studio
+**Step 2.**
+Now we want to track when users click remove items from the cart. This could provide valuable information around how the UI is responding for the user.
 
-In the command line, type the following.
+It's really easy to add tracking for this in our cart. If you open the template file for the shopping cart found at <b>Views -> ShoppingCart -> Index.cshtml </b> you will be able to find some custom event logging already in action! The startTrackEvent will start a timer and reference the record the user wants to remove from the cart. Once stopTrackEvent is called the timer log the time taken from start to finish and add a custom measurement of 'duration'.
 
-    start PartsUnlimited.sln
+```C#
+...
+window.appInsights.startTrackEvent(recordToDelete);
+...
+// ajax call to remove item from the cart
+...
+ window.appInsights.stopTrackEvent(recordToDelete);
+...
+```
 
-Or navigate to where you cloned the repository to e.g. `C:\Source\Repos` with explorer and double click on PartsUnlimited.sln
+### Task 3: Create a custom telemetry event on the server side
+**Step 1.**
+Firstly we need an Application Insights telemetry provider. This will essentially wrap up any Application Insights specific calls inside an common interface. This means we can swap out specific tracing implementations either before or at runtime. Add a new class to "Telemetry" folder, name it `ApplicationInsightsTelemetryProvider.cs`.
 
-**Step 3.** Let's create a folder for our feature flag related classes. On the PartsUnlimitedWebsite solution, right click and create a new folder. We can call it something like 'FeatureFlag'.
 
-![](<media/new-folder.png>)
+**Step 3.**
+Implement the already existing ITelemetryProvider and wire up the methods to use the application insights telemetry client.
 
-**Step 4.** Now we will create the first feature flag class. Right click on the newly created **FeatureFlag** folder -> select **'Add'** -> select **'Class...'**.
-
-![](<media/new-class.png>)
-
-**Step 5.** Create a new class in this folder called `FeatureType.cs`. This will be used to define different types of features we have.
-
-```csharp
-namespace PartsUnlimited.FeatureFlag
-{
-    public enum FeatureType
+```C#
+public class ApplicationInsightsTelemetryProvider : ITelemetryProvider
     {
-        Default,
-        Region
+        private readonly TelemetryClient _telemetry;
+
+        public ApplicationInsightsTelemetryProvider()
+        {
+            _telemetry = new TelemetryClient();
+        }
+
+        public void TrackTrace(string message)
+        {
+            _telemetry.TrackTrace(message);
+        }
+
+        public void TrackEvent(string message)
+        {
+            _telemetry.TrackEvent(message);
+        }
+
+        public void TrackEvent(string message, Dictionary<string, string> properties, Dictionary<string, double> measurements)
+        {
+            _telemetry.TrackEvent(message, properties, measurements);
+        }
+
+        public void TrackException(Exception exception)
+        {
+            _telemetry.TrackException(exception);
+        }
+    }
+```
+
+```C#
+public class VersionedTelemetryInitializer : ITelemetryInitializer
+{
+    public void Initialize(ITelemetry telemetry)
+    {
+        // you could possibly pull this from the assembly version
+        telemetry.Context.Properties["Version"] = "1.0.0.1";
     }
 }
 ```
 
-**Step 6.** Add another class in the same folder called `Feature.cs`. This will define the structure of our features.
+>**Note:** You can add context here for the TelemetryClient to use. This could be used to filter results to a specific version. If we released a new version with some features in a pilot sample of users, we could see if this has inadvertently impacted other parts of the solution.
 
-```csharp
-namespace PartsUnlimited.FeatureFlag
+```C#
+public class ApplicationInsightsTelemetryProvider : ITelemetryProvider
 {
-    public class Feature
+    private readonly TelemetryClient _telemetry;
+
+    public ApplicationInsightsTelemetryProvider()
     {
-        public Feature(string key, string description, bool active, FeatureType type)
-        {
-            Key = key;
-            Description = description;
-            Active = active;
-            Type = type;
-        }
+          TelemetryConfiguration telemetryConfiguration = new TelemetryConfiguration
+          {
+              TelemetryInitializers = { new MyTelemetryInitializer() }
+          };
 
-        public FeatureType Type { get; }
-
-        public bool Active { get; set; }
-
-        public string Description { get; }
-
-        public string Key { get; }
-
+          _telemetry = new TelemetryClient(telemetryConfiguration);      
     }
-}
+    ...
 ```
 
-- **Feature Type** is an enum which represents the feature type.
-- **Active** is going to be the current state for the feature flag.
-- **Description** is going to be a brief description of what the feature flag is for.
-- **Key** is going to be the unique identifier for that particular feature flag.
 
-**Step 7.** We need an interface we will use to template all our different feature toggle types. Let's call this `IFeatureFlagStrategy.cs` and store it in the same folder we've been using -> `.\PartsUnlimited\src\PartsUnlimitedWebsite\FeatureFlag`. This interface will have two method signatures: 'Can' and 'Do'. 'Can' will be used to decide which strategy should be run. 'Do' will perform the actual work required for the feature flag. Create this in the same 'FeatureFlag' folder we created before.
+**Step 4.**
+In ***Startup.cs*** we need to rewire out dependency injector. Currently it's using an ***EmptyTelemetryProvider***. We want to swap this out with our newly created ***ApplicationInsightsTelemetryProvider***. Locate the line where the ***ITelemetryProvider*** is bound. It should look something like this
 
-```csharp
-
-namespace PartsUnlimited.FeatureFlag
-{
-    public interface IFeatureStrategy
-    {
-        bool Can(Feature feature);
-
-        bool Do(Feature feature, string comparison);
-    }
-}
-```
-
-**Step 8.** Now we want to create a feature manager class and interface. This will be used later on to toggle our features on and off. Let's call it `FeatureManager.cs` and store it here -> `.\PartsUnlimited\src\PartsUnlimitedWebsite\FeatureFlag\FeatureManager.cs`
-
-```csharp
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace PartsUnlimited.FeatureFlag
-{
-    public interface IFeatureManager
-    {
-        bool GetStatusByKey(string key, string comparison);
-        void ChangeFeatureToggles(string[] selectedItems);
-        IEnumerable<Feature> RetrieveFeatures();
-    }
-
-    public class FeatureManager: IFeatureManager
-    {
-        private readonly IEnumerable<Feature> _features;
-        private readonly IEnumerable<IFeatureStrategy> _strategies;
-
-        public FeatureManager(IEnumerable<Feature> features, IEnumerable<IFeatureStrategy> strategies)
-        {
-            if (features == null)
-                throw new ArgumentNullException(nameof(features));
-            if (strategies == null)
-                throw new ArgumentNullException(nameof(strategies));
-
-            _features = features;
-            _strategies = strategies;
-        }
-
-        public IEnumerable<Feature> RetrieveFeatures()
-        {
-            return _features;
-        }
-
-        public bool GetStatusByKey(string key, string comparison)
-        {
-            if (comparison == null)
-                throw new ArgumentNullException(nameof(comparison));
-            if (string.IsNullOrEmpty(key))
-                throw new ArgumentNullException(nameof(key));
-
-            Feature feature = _features.SingleOrDefault(f => f.Key == key);
-
-            foreach (IFeatureStrategy strategy in _strategies)
-            {
-                if (strategy.Can(feature))
-                {
-                    return strategy.Do(feature, comparison);
-                }
-            }
-            throw new Exception(string.Format("Unable to find a feature strategy for the key {0} with the comparison of {1}", key, comparison));
-        }
-
-        public void ChangeFeatureToggles(string[] selectedItems)
-        {
-            if (selectedItems == null)
-                throw new ArgumentNullException(nameof(selectedItems));
-
-            _features.AsParallel().ForAll(
-                f =>
-                {
-                    f.Active = selectedItems.Contains(f.Key);
-                });
-        }
-    }
-}
-
-```
-
-Now let's explain the sections of the above code.
-
-- **Features** is a list of features we want to use with the application.
-- **GetStatusByKey** is a method we will use to get the current status for a particular key. This will check to see if there's an existing strategy which can handle this feature flag.
-- **ChangeFeatureToggles** takes in a list of selected feature toggles. If the key exists in any of our 'features' that status will be toggled.
-
-*Note: It's a much better idea to store these flags in a database. For simplicity's sake we have stored them in memory.*
-
-**Step 9.** Now lets create a region specific feature. The first file will be called `FeatureFlags.cs` and it will be responsible for storing the parameters required for specific features. This should be stored in the same FeatureFlag folder we created earlier `.\PartsUnlimited\src\PartsUnlimitedWebsite\FeatureFlag`.
-
-```csharp
-
-using System;
-using System.Collections.Generic;
-
-namespace PartsUnlimited.FeatureFlag
-{
-    public interface IFeatureFlags
-    {
-        Dictionary<string, DateTime> Regions { get; }
-    }
-
-    public class FeatureFlags : IFeatureFlags
-    {
-        public Dictionary<string, DateTime> Regions { get; }
-
-        public FeatureFlags(Dictionary<string, DateTime> regions)
-        {
-            if (regions == null)
-                throw new ArgumentNullException(nameof(regions));
-            Regions = regions;
-        }
-    }
-}
-
-```
-
-The second file will be called `FeatureRegionStrategy.cs` and will contain the core logic of our region specific feature flag. It should be created in the location as the previous file -> `.\PartsUnlimited\src\PartsUnlimitedWebsite\FeatureFlag`.
-
-```csharp
-
-using System;
-using System.Linq;
-
-namespace PartsUnlimited.FeatureFlag
-{
-    public class FeatureRegionStrategy : IFeatureStrategy
-    {
-        private readonly IFeatureFlags _featureFlags;
-
-        public FeatureRegionStrategy(IFeatureFlags featureFlags)
-        {
-            if (featureFlags == null)
-                throw new ArgumentNullException(nameof(featureFlags));
-            _featureFlags = featureFlags;
-        }
-        public bool Can(Feature feature)
-        {
-            if (feature == null)
-                throw new ArgumentNullException(nameof(feature));
-
-            return feature.Type == FeatureType.Region;
-        }
-
-        public bool Do(Feature feature, string comparison)
-        {
-            if (feature == null)
-                throw new ArgumentNullException(nameof(feature));
-            if (comparison == null)
-                throw new ArgumentNullException(nameof(comparison));
-
-            string[] activeRegions = _featureFlags.Regions.Keys.ToArray();
-
-            if (feature.Active)
-            {
-                bool isRegionActive = activeRegions.Contains(comparison);
-
-                if (isRegionActive)
-                {
-                    DateTime featureActiveFromTime = _featureFlags.Regions[comparison];
-                    return DateTime.Now > featureActiveFromTime;
-                }
-            }
-            return false;
-        }
-    }
-}
-```
-
-**Step 10.** Now we want to create a static constants class to store the key and description of our feature flags. Let's call this `FeatureConstants.cs` and store it here -> `.\PartsUnlimited\src\PartsUnlimitedWebsite`
-
-```csharp
-
-namespace PartsUnlimited
-{
-    public static class FeatureConstants
-    {
-        public static string BulkBuyKey => "BulkBuyKey";
-        public static string BulkBuyDescription => "Ability to quickly add 10 of one item to the cart";
-    }
-}
-```
-
-**Step 11.** Add the following section to your `config.json`, set any date time string for now as we will change this later. This file can be found here -> `.\PartsUnlimited\src\PartsUnlimitedWebsite\config.json`
-
-```json
+***(Before)***
+```C#
+public void ConfigureServices(IServiceCollection services)
 {
     ...
-
-    "FeatureFlags": {
-        "Region": {
-            "New Zealand": "2016-11-04T12:20:29",
-            "Australia": "2016-11-04T12:25:29"
-        }
-    }
-}
-```
-
-
-**Step 12.** Now we need to manage our dependencies. Navigate to `Startup.cs` located here -> `.\PartsUnlimited\src\PartsUnlimitedWebsite\Startup.cs`. Add the following code below to the ConfigureServices method.
-
-```csharp
-...
-using System.Collections.Generic;
-using System.Linq;
-using PartsUnlimited.FeatureFlag;
-
-namespace PartsUnlimited
-{
-    public void ConfigureServices(IServiceCollection services)
-    {
-        ...
-        // This will get the configuration section out of the config.json file
-        IEnumerable<IConfigurationSection> configurationSections = Configuration.GetSection("FeatureFlags:Region").GetChildren();
-
-        // This will map the config.json region values to a dictionary<string, Date>
-        Dictionary<string, DateTime> regions = configurationSections.ToDictionary(config => config.Key, config => DateTime.Parse(config.Value));
-
-        FeatureFlags featureFlags = new FeatureFlags(regions);
-
-        // This will make our feature flags available across the application
-        services.AddScoped<IFeatureFlags>(
-            p => featureFlags);
-
-        // Here is where we will define our feature flag strategies and bind them to the feature manager
-        var strategies = new List<IFeatureStrategy> {
-            new FeatureRegionStrategy(featureFlags)
-        };
-        var features = new List<Feature>
-        {
-            new Feature(FeatureConstants.BulkBuyKey, FeatureConstants.BulkBuyDescription, true, FeatureType.Region)
-        };
-        services.AddScoped<IFeatureManager>(m => new FeatureManager(features, strategies));
-        ...
-    }
-}
-```
-
-**Step 13.** We need to store a user's location in order to apply our region flag correctly. Navigate to `.\PartsUnlimited\src\PartsUnlimited.Models\ApplicationUser.cs` and add the 'Location' property as seen below.
-
-```csharp
-public class ApplicationUser : IdentityUser
-{
-    public string Name { get; set; }
-    public string Location { get; set; }
-}
-```
-
-**Step 14.** Navigate to `.\PartsUnlimited\src\PartsUnlimitedWebsite\Models\ManageViewModels.cs` and look inside the IndexViewModel class. We need to add the location and feature flags properties here.
-
-```csharp
-...
-using PartsUnlimited.FeatureFlag;
-
-public class IndexViewModel
-{
-    ...
-    public string Location { get; set; }
-    public IFeatureFlags FeatureFlags { get; set; }
-}
-```
-
-**Step 15.** Navigate to the `.\PartsUnlimited\src\PartsUnlimitedWebsite\Controllers\ManageController.cs` class and add the **IFeatureManager** to the constructor.
-
-```csharp
-...
-using PartsUnlimited.FeatureFlag;
-
-...
-[Authorize]
-public class ManageController : Controller
-{
-    private readonly IFeatureManager _featureManager;
-    private readonly IFeatureFlags _featureFlags;
-
-    public ManageController(UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager,
-    IFeatureManager featureManager, IFeatureFlags featureFlags)
-    {
-        _featureManager = featureManager;
-        _featureFlags = featureFlags;
-        UserManager = userManager;
-        SignInManager = signInManager;
-    }
-
+    services.AddSingleton<ITelemetryProvider, EmptyTelemetryProvider>();
     ...
 }
 ```
 
-**Step 16.** Now in the Index method inside `.\PartsUnlimited\src\PartsUnlimitedWebsite\Controllers\ManageController.cs` we need to populate our location value with the correct value from the user.
-
-```csharp
-//
-// GET: /Manage/Index
-public async Task<ActionResult> Index(ManageMessageId? message = null)
+***(After)***
+```C#
+public void ConfigureServices(IServiceCollection services)
 {
     ...
+    services.AddSingleton<ITelemetryProvider, ApplicationInsightsTelemetryProvider>();
+    ...
+}
+```
 
-    var model = new IndexViewModel
+
+**Step 5.**
+Locate the <b>OrdersController</b> class at <b>Controllers -> OrdersController.cs </b>. Here you will see our telemetry client already in action! The only difference here is that we're now using Application Insights. You can also see the different types of tracing. We're using TrackTrace to log paths taken through the application. This is useful for checking when a null id is supplied or a username miss match is triggered. We're also using TrackEvent - with this method we can supply extra parameters to provide better context when surfacing this error in the management portal. This could be used to resolve issues faced by a specific user or order.
+
+![](<media/custom-telemetry.png>)
+
+Also check out the <b>ShoppingCartController</b> class at <b>Controllers -> ShoppingCartController.cs </b>. Here you can see the measurements parameter being used to check the time taken for the order process. This could be used to display performance issues with the database.
+
+```C#
+public async Task<IActionResult> AddToCart(int id)
+{
+    ...
+    // Start timer for save process telemetry
+    var startTime = System.DateTime.Now;
+    ...
+
+    ...
+    // Trace add process
+    var measurements = new Dictionary<string, double>()
     {
-        ...
-
-        Location = user.Location,
-        FeatureFlags = _featureFlags
+       {"ElapsedMilliseconds", System.DateTime.Now.Subtract(startTime).TotalMilliseconds }
     };
-
-    return View(model);
-}
-```
-
-**Step 17.** Navigate to `Index.cshtml` inside the Views -> Manage folder, we then need add the following at the top of the file.
-
-```csharp
-@using System.Threading.Tasks
-```
-
-Then at the bottom of the page **just inside the last closing `</dl>` tag** we want to add the following code.
-
-```csharp
-...
-
-<dt>Location:</dt>
-<dd>
-    @using (Html.BeginForm("AddLocation", "Manage", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
-    {
-        @Html.AntiForgeryToken()
-
-        @Html.DropDownListFor(x => x.Location, Model.FeatureFlags.Regions.Keys.ToArray().Select(i => new SelectListItem { Text = i, Value = i, Selected = (i == Model.Location) }))
-
-        <span>[ <input type="button" value="Save location" class="btn btn-link" data-toggle="modal" data-target="#confirmation-modal"/> ]</span>
-
-        <div class="modal fade" id="confirmation-modal"  tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                        <h4 class="modal-title">Confirmation</h4>
-                    </div>
-                    <div class="modal-body">
-                        <p>Are you sure you wish to change your location?</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" style="float: left;" data-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary" style="float: left;">Save changes</button>
-                    </div>
-                </div><!-- /.modal-content -->
-            </div><!-- /.modal-dialog -->
-        </div><!-- /.modal -->
-    }
-</dd>
-...
-```
-
-**Step 18.** Now we need to ensure that when a user clicks the 'save location' button it actually saves! Navigate to `.\PartsUnlimited\src\PartsUnlimitedWebsite\Controllers\ManageController.cs` again and create a new POST method.
-
-```csharp
-using System;
-...
-
-[Authorize]
-public class ManageController : Controller
-{
+    _telemetry.TrackEvent("Cart/Server/Add", null, measurements);
     ...
-
-    //
-    // POST: /Manage/AddLocation
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddLocation(IndexViewModel indexViewModel)
-    {
-        if (indexViewModel == null)
-            throw new ArgumentNullException(nameof(indexViewModel));
-
-        var user = await GetCurrentUserAsync();
-        user.Location = indexViewModel.Location;
-        await UserManager.UpdateAsync(user);
-        return RedirectToAction("Index");
-    }
 }
 ```
 
-**Step 19.** We need a way to bulk add items to a users cart. Navigate to `.\PartsUnlimited\src\PartsUnlimited.Models\ShoppingCart.cs` and add the following method.
+### Task 4: Trigger some events
 
-```csharp
-public void BulkAddToCart(Product product)
-{
-    const int bulkItemAmount = 10;
-    // Get the matching cart and product instances
-    var cartItem = _db.CartItems.SingleOrDefault(
-        c => c.CartId == ShoppingCartId
-        && c.ProductId == product.ProductId);
-
-    if (cartItem == null)
-    {
-        // Create a new cart item if no cart item exists
-        cartItem = new CartItem
-        {
-            ProductId = product.ProductId,
-            CartId = ShoppingCartId,
-            Count = bulkItemAmount,
-            DateCreated = DateTime.Now
-        };
-
-        _db.CartItems.Add(cartItem);
-    }
-    else
-    {
-        // If the item does exist in the cart, then add one to the quantity
-        cartItem.Count += bulkItemAmount;
-    }
-}
-```
-
-**Step 20.** Let's wire up the required feature information to `StoreController.cs` located here -> `.\PartsUnlimited\src\PartsUnlimitedWebsite\Controllers\StoreController.cs`. We want to add the following code to the controller.
-
-```csharp
-...
-using Microsoft.AspNetCore.Identity;
-using PartsUnlimited.FeatureFlag;
-using System.Threading.Tasks;
-
-namespace PartsUnlimited.Controllers
-{
-    public class StoreController : Controller
-    {
-        ...
-        private readonly IFeatureManager _featureManager;
-        private readonly UserManager<ApplicationUser> _userManager;
-
-        public StoreController(IPartsUnlimitedContext context, IMemoryCache memoryCache, IFeatureManager featureManager, UserManager<ApplicationUser> userManager)
-        {
-            ...
-            if (featureManager == null) throw new ArgumentNullException(nameof(featureManager));
-            if (userManager == null) throw new ArgumentNullException(nameof(userManager));
-
-            ...
-            _featureManager = featureManager;
-            _userManager = userManager;
-        }
-
-        ...
-
-        public async Task<IActionResult> Details(int id)
-        {
-            Product productData;
-
-            if (HttpContext.User.Identity.IsAuthenticated)
-            {
-                ApplicationUser user = await _userManager.FindByIdAsync(_userManager.GetUserId(HttpContext.User));
-                ViewBag.IsFeatureActive = _featureManager.GetStatusByKey(FeatureConstants.BulkBuyKey, user.Location ?? string.Empty);
-            }
-            else
-            {
-                ViewBag.IsFeatureActive = false;
-            }
-
-            ...
-
-            return View(productData);
-        }
-    }
-}
+**Step 1.**
+Firstly, we'll need to fire up the application. Open up a command line, navigate to your repository and then to `src` > `PartsUnlimitedWebsite>`. Run the following command to host the website locally:
 
 ```
+dotnet run
+```
+>**Note:** The project will be compiled, then hosted on the URL specified in your command line (e.g. http://localhost:5000).<br>
+![](<media/dotnet-run.png>)
 
-We also want to include the bulk add method to `ShoppingCartController.cs` located here -> `.\PartsUnlimited\src\PartsUnlimitedWebsite\Controllers\ShoppingCartController.cs`.
+**Step 2.**
+Open the website's URL in a browser. Now we want to trigger some of the custom events described earlier. Lets add some items to our shopping cart.
 
-```csharp
+![](<media/website-home.png>)
 
-        //
-        // GET: /ShoppingCart/BulkAddToCart/5
-        public async Task<IActionResult> BulkAddToCart(int id)
-        {
-            // Retrieve the product from the database
-            var addedProduct = _db.Products
-                .Single(product => product.ProductId == id);
+First we need to set up a new account.
 
-            // Start timer for save process telemetry
-            var startTime = System.DateTime.Now;
+![](<media/register.png>)
 
-            // Add it to the shopping cart
-            var cart = ShoppingCart.GetCart(_db, HttpContext);
+Follow these steps to register an account.
 
-            cart.BulkAddToCart(addedProduct);
+![](<media/register-steps.png>)
 
-            await _db.SaveChangesAsync(HttpContext.RequestAborted);
+You will need to confirm the email provided.
 
-            // Trace add process
-            var measurements = new Dictionary<string, double>()
-            {
-                {"ElapsedMilliseconds", System.DateTime.Now.Subtract(startTime).TotalMilliseconds }
-            };
-            _telemetry.TrackEvent("Cart/Server/Add", null, measurements);
+![](<media/confirm-email.png>)
 
-            // Go back to the main store page for more shopping
-            return RedirectToAction("Index");
-        }
+We will then need to log in again.
+
+![](<media/login-again.png>)
+
+![](<media/login.png>)
+
+Now that we're logged in, lets add something to our cart.
+
+![](<media/website-home-logged-in.png>)
+
+Select one of the products.
+
+![](<media/website-select-product.png>)
+
+![](<media/add-to-cart.png>)
+
+For the payment page, specify the 'FREE' promotional code to ensure the order goes through.
+
+![](<media/payment.png>)
+
+![](<media/checkout-complete.png>)
+
+Now lets go check and make sure our order went through.
+
+![](<media/view-order.png>)
+
+Now to trigger the remove product client side tracing. Add another product to your cart and then remove it.
+
+### Task 5. Build a custom query to view performance metrics and data
+
+**Step 1.** Lets go back to the Azure portal, navigate to <http://ms.portal.azure.com> and
+sign in with your credentials.
+
+![](<media/prereq-step1.png>)
+
+**Step 2.** Click on the “More services” tile on the left column, and select “Application Insights”.
+
+ ![](<media/prereq-step1.1.png>)
+
+**Step 3.** Click on the name of the Application Insights instance that was created when you deployed the resource group using the Deployment template in the PartsUnlimited solution.
+
+![](<media/prereq-step2.png>)
+
+**Step 2.** Select the Analytics link in the portal
+
+![](<media/analytics-link-azure.png>)
+
+**Step 3.** Now we want to create a new query. Hit the '+' icon as shown below.
+
+![](<media/new-query-tab.png>)
+
+**Step 4.** Let us check and see if our analytics are pushing through from the application. In the query window simply type 'customEvents', then hit go. We can see the custom dimensions and measurements we sent through when navigating around the site.
+
+![](<media/custom-events.png>)
+
+**Step 5.**
+Lets see the last couple hours of custom events on a line chart. Here we will use the 'summarize' function. This applies a specified aggregation function over groups of rows, in our case the aggregation function is to count the number of custom events 'by' the time they occurred. Then we simply use the render function and add the chart we want to be rendered.
 
 ```
-
-
-**Step 21.** Now lets add the actual feature toggle on the `Details.cshtml` file located here -> `.\PartsUnlimited\src\PartsUnlimitedWebsite\Views\Store\Details.cshtml`. Take note of the comments below - we want to find where the first section (under the first comment) of code is and replace it with the second section (under the second comment).
-
-Look for the following tag below.
-
-```csharp
-
-<a href="@Url.Action("AddToCart", "ShoppingCart", new { id = Model.ProductId })" class="btn">Add to Cart</a>
-
+customEvents
+     | summarize event_count=count() by timestamp
+     | render timechart
 ```
 
-Replace the code above with the code below.
+![](<media/line-graph-simple.png>)
 
-```csharp
-
-<a href="@Url.Action("AddToCart", "ShoppingCart", new { id = Model.ProductId })" class="btn">Add to Cart</a>
-
-@{
-    if (ViewBag.IsFeatureActive)
-    {
-        <a href="@Url.Action("BulkAddToCart", "ShoppingCart", new { id = Model.ProductId })" class="btn">Bulk Add (10) to Cart</a>
-    }
-}
+**Step 6.** Lets have a look at the top 10 custom events of our application. Copy and run the query below. This will filter the result set to the last 24hrs. It's good practice to ensure query result sets are always filtered down to a manageable set. We then aggregate
+the event count by the time the events occurred. We then want to grab the top 10 results and render a barchart.
+```
+customEvents
+ | where timestamp >= ago(24h)
+ | summarize count() by name
+ | top 10 by count_
+ | render barchart
 ```
 
-### Task 2: Try it out!
+![](<media/top-custom-queries-name.png>)
 
-**Step 1.** Before launching the site, locate the  `.\PartsUnlimited\src\PartsUnlimitedWebsite\config.json` file and alter the region active times. Make the New Zealand region five minutes from now and the Australian region 10 minutes from now.
+**Optional Hardcore mode, skip this step if you don't want to dive this deep!** What if we want to find out the ranges of durations cover different percentages of sessions?
 
-**Step 2.** Now launch the site. You can do this but pressing f5 or hitting the button shown below in Visual Studio.
+- Here we want to get all requests where a valid session id exists. This is to filter out requests unrelated to session data.
+- We then want to perform the aggregate function of grabbing the min and max timestamp for each request.
+- We leverage the 'extend' function to add columns to the existing ones. In the example below we are creating a new column called 'sesh' which is the subtraction of the summarized min and max values we got earlier in the query.
+- We add an extra 'where' clause to filter out sessions that are under one second in length.
+- We then perform another aggregate function of grouping the count of sessions by the rounded down (floor) value grouped in to three second 'bins'
+- We finally group the result set in to percentiles of 5, 20, 50 80 and 95.
 
-![](<media/iis-express.png>)
-
-![](<media/splash.png>)
-
-**Step 3.** Now log in with any account.
-
-Or alternatively you can use the administrator account. This can be found in `.\PartsUnlimited\src\PartsUnlimitedWebsite\config.json`.
-
-```json
-"AdminRole": {
-    "UserName": "Administrator@test.com",
-    "Password": "YouShouldChangeThisPassword1!"
-}
+```
+requests
+   | where isnotnull(session_Id) and isnotempty(session_Id)
+   | summarize min(timestamp), max(timestamp) by session_Id
+   | extend sesh = max_timestamp - min_timestamp
+   | where sesh > 1s
+   | summarize count() by floor(sesh, 3s)
+   | summarize percentiles(sesh, 5, 20, 50, 80, 95)
 ```
 
-**Step 4.** Select 'Manage Account' at the top right corner.
+Note you may see different data depending on the interaction you had with the application. From the data we can see that 50% of sessions lasted around 1 minute and 15 seconds. 5% of sessions lasted only 3 seconds! At the other end 5% of sessions lasted 1 minute and 47 seconds.
 
-![](<media/manage.png>)
+![](<media/percentiles-table.png>)
 
-**Step 5.** Now select 'Australia' and then save it.
-
-![](<media/location.png>)
-
-**Step 6.** Now navigate to the 'Breaks' section from the main navigation.
-
-![](<media/breaks.png>)
-
-Notice the bulk buy is not available yet. This should change in a couple of minutes.
-
-![](<media/break-no-bulk.png>)
-
-**Step 7.** Once the current time is past the time set in the `.\PartsUnlimited\src\PartsUnlimitedWebsite\config.json` for New Zealand. Refresh the page and you should see the bulk buy option. The same thing will happen 5 minutes later for any Australian users.
-
-![](<media/break-bulk.png>)
-
-In this lab you have learned how to implement time and region based feature flags for a web application. This gives you the ability stagger releases to assist with distributing load or potentially A/B testing in regions that are more accustomed to change.
+In this lab, you learnt how to get up and running with Application Insights. You also learnt how to leverage the power of the Analytics suite and build custom queries to gain insight in to how your application is running.
