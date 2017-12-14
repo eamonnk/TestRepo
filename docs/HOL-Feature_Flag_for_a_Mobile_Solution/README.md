@@ -5,7 +5,7 @@ In this lab you will work with a simple Xamarin Forms mobile application. Your t
 
 ## Pre-requisites: ##
 
-- Visual Studio 2015 Update 3
+- Visual Studio 2017
 
 - [Windows SDK and emulator](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive) installed  
 

@@ -5,7 +5,7 @@ A dormant bug may exist in the PartsUnlimited site but it has yet to show itself
 Datadog may be preferable due to a slight difference in it's target user base (admins, operators and the like) as opposed to other APM software. It also has some great infrastructure monitoring executables that are easy to install and provide great coverage around your application stack.
 
 ### Pre-requisites: ###
-- Visual Studio 2015 Update 3 (NOTE: Visual Studio 2015 preview 5 **does not** support .net core tooling, ensure the version you are running supports .net core tooling before continuing).
+- Visual Studio 2017
 
 - An active [DataDog account](https://www.datadoghq.com/datadog-signup/)
 
@@ -97,24 +97,7 @@ This will sit under the "Keys" section.
         public string Alert_Type { get; set; }
     }
 ```
-**Step 6.** Add the Microsoft.AspNet.WebApi.Client nuget package. We need this to perform the PostAsJsonAsync method on our HttpClient. 
-
-![](<media/add-package.png>)
-
-NOTE: If you're **not using Visual Studio** you will need to add the dependency in manually. 
-
-- In `./HOL/src/PartsUnlimitedWebsite/project.json` under the 'dependencies' section add the following (don't forget to add a comma on the line above). Check [here](https://www.nuget.org/packages/microsoft.aspnet.webapi.client/) for the latest version of Microsoft.AspNet.WebApi.Client.
-
-```json
-    "dependencies": {
-        ...                                     
-        "Microsoft.AspNet.WebApi.Client": "5.2.3"
-    }
-```
-
-- After that is done run `dotnet restore` from the command line inside the project folder `./HOL/src/PartsUnlimitedWebsite/`
-
-**Step 7.** Create another class called DataDogEventLogger.cs
+**Step 6.** Create another class called DataDogEventLogger.cs
 ```csharp
     public interface IEventLogger
     {
@@ -169,7 +152,10 @@ NOTE: If you're **not using Visual Studio** you will need to add the dependency 
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 string requestTarget = target + $"?api_key={_config.ApiKey}";
-                return await client.PostAsJsonAsync(requestTarget, payload);
+                HttpContent content = new StringContent(await Task.Run(() => JsonConvert.SerializeObject(payload)));
+               
+                return await client.PostAsync(requestTarget, content);
+
             }
         }
     }
@@ -188,7 +174,7 @@ We have the following:
 
 We also have the Trace and TrackException methods which, under the hood, are very similar. The only real difference being the information logged to DataDog.
 
-**Step 8.** Now, in order to catch exceptions make by our application we are going to want some sort of global exception catcher. Let's create a global exception **filter** for our application to ensure all unhandled exceptions are logged to DataDog.
+**Step 7.** Now, in order to catch exceptions make by our application we are going to want some sort of global exception catcher. Let's create a global exception **filter** for our application to ensure all unhandled exceptions are logged to DataDog.
 
 ```csharp
     public class CustomExceptionFilterAttribute : ExceptionFilterAttribute
@@ -209,7 +195,7 @@ We also have the Trace and TrackException methods which, under the hood, are ver
         }
     }
 ```
-**Step 9.** To ensure this custom exception filter is applied across our application we can add it to the default set of MVC filters. Navigate back to the Startup.cs class. Note we also want to bind our event logger just in case we want this to be used somewhere else in the application.
+**Step 8.** To ensure this custom exception filter is applied across our application we can add it to the default set of MVC filters. Navigate back to the Startup.cs class. Note we also want to bind our event logger just in case we want this to be used somewhere else in the application.
 
 ```csharp
         public void ConfigureServices(IServiceCollection services)
@@ -234,7 +220,7 @@ We also have the Trace and TrackException methods which, under the hood, are ver
         }
 ```
 
-**Step 10.** Now, let's add some tracing in our Controllers. Firstly, let's add some tracing around when people add items to their cart. Navigate to ShoppingCartController.cs
+**Step 9.** Now, let's add some tracing in our Controllers. Firstly, let's add some tracing around when people add items to their cart. Navigate to ShoppingCartController.cs
 
 ```csharp
     public class ShoppingCartController : Controller

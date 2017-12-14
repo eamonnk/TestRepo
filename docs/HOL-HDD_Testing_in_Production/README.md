@@ -93,25 +93,15 @@ PartsUnlimited already has their production website deployed and in operation. B
 
 ![](<media/step19.png>)
 
-**Step 19.** Click the Microsoft Azure App Service publish target.
+**Step 19.** Click Publish.
 
 ![](<media/step20.png>)
 
-**Step 20.** Select test slot to publish to and then click OK.
-
-![](<media/step21.png>)
-
-**Step 21.** After publish settings are downloaded for Web Deploy, click Validate Connection.
-
-![](<media/step22.png>)
-
-**Step 22.** Click Publish.
-
-**Step 23.** After publication is complete, a browser window should open and navigate to the homepage. Verify that the test site waits for 20 seconds before transitioning between images in the carousel.
+**Step 20.** After publication is complete, a browser window should open and navigate to the homepage. Verify that the test site waits for 20 seconds before transitioning between images in the carousel.
 
 ![](<media/step6.png>)
 
-**Step 24.** Close the browser window.
+**Step 21.** Close the browser window.
 
 
 ### Task 2: Adding Route Rules to Direct Traffic to the Test Site with PowerShell (Not available using Azure CLI yet)

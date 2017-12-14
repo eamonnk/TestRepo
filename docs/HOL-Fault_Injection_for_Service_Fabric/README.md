@@ -5,7 +5,7 @@ Customers of the PartsUnlimited website have complained of the site becoming unr
 
 **Prerequisites**
 
-- Visual Studio 2015 Update 3
+- Visual Studio 2017
 
 - An active Azure subscription
 
@@ -25,24 +25,19 @@ Service Fabric requires an executable. Our first step involves ensuring the Part
 
 **Step 1.** Open up PartsUnlimited.sln in Visual Studio.
 
-**Step 2.** Locate the project.json file under the PartsUnlimitedWebsite project.
+**Step 2.** Select to edit the PartsUnlimitedWebsite.csproj by right clicking on the PartsUnlimitedWebsite and selecting to edit.
 
-**Step 3.**  We need to remove the 'platform' property of Microsoft.NETCore.App. Check out the sample below.
+![](<media\editcsproj.png>)
 
-Note: The platform property is used when you want to build **portable apps** that can be executed by the .NET Core shared runtime (via 'dotnet run myapp'). Service Fabric requires a **standalone app**. Standalone apps have an executable file with the runtimes embedded in the application itself. This should be added at the begining of the .json file.
+**Step 3.** We need to remove the 'PackageReference' property of Microsoft.NETCore.App. Check out the sample below.
 
-```json
-{
-    "dependencies": {
-        "Microsoft.NETCore.App": {
-            "version": "1.0.0"
-        }
-        ...
-    }
-}
+Note: The platform property is used when you want to build **portable apps** that can be executed by the .NET Core shared runtime (via 'dotnet run myapp'). Service Fabric requires a **standalone app**. Standalone apps have an executable file with the runtimes embedded in the application itself.
+
+```csproj
+<PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.0" />	
 ```
 
-**Step 4.** Now we want add the desired runtime so it will build an executable. In the same project.json file add the following to the root of the json file. This should be located at the **end** of the file, after the **scripts** section.
+**Step 4.** Now we want add the desired runtime so it will build an executable. In the same PartsUnlimitedWebsite.csproj file add the following to the 'PropertyGroup' tag. 
 
 Note: The runtime you use here is important. If you want to solution to work locally and you're not using Windows 10 - use one of the following:
 
@@ -54,16 +49,11 @@ Note: The runtime you use here is important. If you want to solution to work loc
 
 *Windows 10*: win10-x64
 
-```json
-{
+```csproj
+<PropertyGroup>
     ...
-
-    "runtimes": {
-        "win10-x64": {}
-    }
-
-    ...
-}
+    <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+</PropertyGroup>
 ```
 
 **Step 5.** Right click on the PartsUnlimitedWebsite and select 'Publish'

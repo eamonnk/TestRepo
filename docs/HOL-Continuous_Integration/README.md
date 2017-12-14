@@ -14,6 +14,8 @@ pushed to Visual Studio Team Services.
 
 	 [Sign up for Visual Studio Team Services](https://www.visualstudio.com/en-us/docs/setup-admin/team-services/sign-up-for-visual-studio-team-services)
 
+NOte: the screenshots are out of date and need to be udpated. they are left as is for not to provide some guidance if it is needed.
+
 ### Tasks Overview: ###
 
 **1. Import Source Code into your VSTS Account:** In this step, you will connect your own Visual Studio Team Services account, download the PartsUnlimited source code, and then push it to your own Visual Studio Team Services account. There are two approaches to doing this: a) Use the Git command line, or b) Use Visual Studio.  
@@ -33,7 +35,8 @@ order to use VSTS Build.
 
 If you haven't already, create a new team project in your Visual Studio Team Services account that uses Git for source control.
 
-![](<media/empty-vsts-git.png>)
+![](<media/shot1.png>)
+![](<media/shot2.png>)
 
 **1.** Clone the repository to a local directory.
 
@@ -73,7 +76,7 @@ Alternatively, you can use a web browser to browse to your account, click into y
 
 Additionally, at the bottom of the web page, you will see the two commands that we will use to push the existing code to VSTS.
 
-![](<media/findVstsRepoUrl.png>)
+![](<media/shot3.png>)
 
 **4.** Add the link to VSTS and push your local Git repo
 
@@ -95,119 +98,94 @@ have created against it.
 
 	https://<account>.visualstudio.com
 
+**2.** Once on the project’s home page, click on the **Build** hub at the top of the page, then on **All Definitions**, and then on **New Definition**.
 
-**2.** Click **Browse** and then select your team project and click
-**Navigate**.
+![](<media/shot3a.png>)
 
-![](<media/CI1.png>)
+**3.** Select the **Empty** build definition, and then click **Next**.
 
-**3.** Once on the project’s home page, click on the **Build** hub at the top of the page, then on **All Definitions**, and then on **New Definition**.
+![](<media/shot4.png>)
 
-![](<media/CI2.png>)
+**4.** Once the new empty build has been created under the "Process" heading on the left, you need to update the "Agent queue" to **Hosted VS2017**.
 
-**4.** Select the **Empty** build definition, and then click **Next**.
+![](<media/shot5.png>)
 
-![](<media/CI3.png>)
+> **Note:** We may have multiple repos and branches, so we need to select the correct Repo and Branch before we can select which Solution to build.
 
->**Note:** As you can see, you can now do Universal Windows Apps & Xamarin Android/IOS Builds as well as Xcode builds.
+**5.** Under the "Get sources" you need to make sure that the "Repository" is the project you have create **Parts-Unlimited** in my case, also update the "Branch" to **Master**.
 
-**5.** After clicking the **Next** button:
-- Select **HOL Team Project**;
-- Select **HOL** Repository;
-- Select **Master** as the default branch;
-- Check **Continuous Integration**;
-- Change the **Default Agent Queue** to **Hosted VS2017**;
-- Click **Create**.
+![](<media/shot6.png>)
 
-<!--- Image needs to be update to highlight the change on the Default Agent Queue to **Hosted VS2017**.
-![](<media/CI4.png>)
---->
+**6.** To start adding tasks to the you need to select the **+** next to **Phase 1**. 
 
-> **Note:** We may have multiple repositories and branches, so we need to select the correct Repo and Branch before we can select which Solution to build.
-
-**6.** After clicking the **Create** button, On the **Build** tab click the **Add build step** in the Build pane.
-
-![](<media/CI5.png>)
+![](<media/shot7.png>)
 
 **7.** In the **Add tasks** dialog, select the **Utility** page and then add a **PowerShell** task.
 
-![](<media/CI6.png>)
+![](<media/shot8.png>)
 
 **8.** Still in the **Add tasks** dialog, select the **Test** page and add a **Publish Test Results**.
 
- ![](<media/CI7.png>)
+ ![](<media/shot9a.png>)
 
-**9.** Select the **Utility** page again and add a **Copy and Publish Artifacts** task and then click on **Close**.
+**9.** Select the **Utility** page again and add a **Publish Artifacts** task.
 
-![](<media/CI8.png>)
+![](<media/shot10.png>)
 
 **10.** On the **PowerShell Script** task, click on the blue **rename** pencil icon and change the name of the step to **dotnet restore, build, test and publish** and click **OK**
 
-**11.** Configure the Task:
-- Select **File Path** for the **Type** property
-- Enter **"build.ps1"** for the **Script filename** property
-- Set **$(BuildConfiguration) $(System.DefaultWorkingDirectory) $(build.stagingDirectory)** for the **Arguments** property. 
-- Click on Advanced and change the **Working Folder** to **$(System.DefaultWorkingDirectory)**
+**11.** Select **File Path** for the **Type** property, enter **"build.ps1"** for the **Script filename** property and **$(BuildConfiguration) $(Build.SourcesDirectory) $(build.stagingDirectory)** for the **Arguments** property.
 
-![](<media/CI9.1.png>)
-
-<!--- Image needs to be updated to have the new parameters as argument.
- ![](<media/CI9.2.png>) 
---->
+![](<media/shot10a.png>)
 
 > **Note:** The build.ps1 script contains commands using the **dotnet.exe** executable used by .Net Core.  The build script does the following: restore, build, test, publish, and produce an MSDeploy zip package.
 
-**12.** On the **Publish Test Results** task make the following changes:
-- Change the **Test Result Format** to **VSTest**.
-- On the **Test Results File** to **\*\*/testresults.xml**.
-- On **Search folder** enter the value **$(System.DefaultWorkingDirectory)**
+**12.** On the **Publish Test Results** task, change the **Test Result Format** to **VSTest** and the **Test Results File** to **\*\*\testresults.xml**.
 
-<!--- Image needs update to show the correct Test Result Format option
-![](<media/CI10.png>)
---->
+![](<media/shot11.png>)
 
-**13.** On the **Copy Publish Artifact** task, change the **Copy Root** property to **$(build.stagingDirectory)**, The **Contents** property to **\*\*\\\*.zip**, The **Artifact Name** property to **drop** and the **Artifact Type** to **Server**.
+**13.** On the **Publish Artifact** task, change the **Path to publish** to **$(build.artifactstagingdirectory)** and the **Artifact name** to **drop**.
 
-![](<media/CI11.png>)
+![](<media/shot13.png>)
 
-**14** Select the **Variables** page and a new variable that will be used by the build.ps1 PowerShell script; **BuildConfiguration** with a value of **release**.
+**14** Select the **Variables** tab and a new variable that will be used by the build.ps1 PowerShell script; **BuildConfiguration** with a value of **release**.
 
-![](<media/CI12.png>)
+![](<media/shot14.png>)
 
-**15.** Click on the **Triggers** tab and verify that the **Continuous integration (CI)** option is selected to build the solution every time a change is checked in. Also make sure the filter includes the appropriate branch (in this case **master** and **Batch Changes** checkbox is unchecked
+**15.** Click on the **Triggers** tab and verify that the **Continuous integration (CI)** option is enabled to build the solution every time a change is checked in. Also make sure the filter includes the appropriate branch (in this case **master** and **Batch Changes** checkbox is unchecked
 
-![](<media/CI13.png>)
+![](<media/shot15.png>)
 
 > **Note:** To enable Continuous integration in your project, check the **Continuous integration (CI)** checkbox. You can select which branch you wish to monitor, as well.
 
-**16.** Click **Save** and give the build definition a name.
+**16.** Click **Save & queue** and select the **Save** option.
 
-![](<media/CI14.png>)
+![](<media/shot16.png>)
 
 ### III. Test the CI Trigger in Visual Studio Team Services
 
 We will now test the **Continuous Integration build (CI)** build we created by changing code in the Parts Unlimited project with Visual Studio Team Services.
 
-**1.** Select the **Code** hub and then select your your repo, **HOL**.
+**1.** Select the **Code** hub and then select your your repo, **Parts-Unlimited**.
 
 **2.** Navigate to **/src/PartsUnlimitedWebsite/Controllers** in the PartsUnlimited project, then click on the ellipsis to the right of **HomeController.cs** and click **Edit**.
 
-![](<media/CI15.png>)
+![](<media/code1.png>)
 
 **2.** After clicking **Edit**, add in text (i.e. *This is a test of CI*) after the last *Using* statement. Once complete, click **Save**.
 
-![](<media/CI16.png>)
+![](<media/code2.png>)
+
+![](<media/code3.png>)
 
 **3.** Click **Build** hub. This should have triggered the build we previously created.
 
-![](<media/CI17.png>)
-
 **4.** Click on the **Build Number**, and you should get the build in progress. Here you can also see the commands being logged to console and the current steps that the build is on.
-![](<media/CI17.1.png>)
+![](<media/shot18.png>)
 
 **4.** Click on the **Build Number** on the top left and you should get a build summary similar to this, which includes test results.
 
-![](<media/CI18.png>)
+![](<media/shot19.png>)
 
 Next steps
 ----------

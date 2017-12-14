@@ -110,7 +110,7 @@ public class ApplicationInsightsTelemetryProvider : ITelemetryProvider
               TelemetryInitializers = { new MyTelemetryInitializer() }
           };
 
-          _telemetry = new TelemetryClient(telemetryConfiguration);      
+          _telemetry = new TelemetryClient(telemetryConfiguration);
     }
     ...
 ```

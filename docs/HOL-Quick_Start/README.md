@@ -15,9 +15,7 @@ In this lab we have an application called PartsUnlimited. We want to set up Cont
 
 - An account in Azure
 
-- [Export/Import Build Definition](https://marketplace.visualstudio.com/items?itemName=onlyutkarsh.ExportImportBuildDefinition) extension for VSTS
-
-
+The screenshots are out of date in these steps, but are left as they still be of some use.
 
 ## Tasks Overview: ##
 **1. Import Source Code into your VSTS Account with Git:** In this step you will download the PartsUnlimited source code, and then push it to your own Visual Studio Team Services account.
@@ -39,7 +37,8 @@ In order to use VSTS Build, your VSTS must contain source code for the applicati
 
 **Step 1.** If you haven't already, create a new team project in your Visual Studio Team Services account that uses Git for source control. Click on "New", enter project name, select "git" for "Version control" and click on "Create project" button.
 
-![](<media/28.png>)
+![](<media/shot1.png>)
+![](<media/shot2.png>)
 
 **Step 2.** Clone the repository to a local directory.
 
@@ -62,9 +61,9 @@ In order to use VSTS Build, your VSTS must contain source code for the applicati
 
 **Step 4.** Add the link to VSTS and push to your local Git repo.
 
-* Navigate to your VSTS and click on "Code" tab. Copy and execute commands marked with `2` and `3` in your command line.
+* Navigate to your VSTS and click on "Code" tab. Copy and execute the commands in your command line.
 
-	![](<media/1.png>)
+	![](<media/shot3.png>)
 
 Congratulations, your code should now be in VSTS.
 
@@ -83,122 +82,71 @@ For this HOL, you will use a Service Principal. Follow these instructions to qui
 
 **Step 2.** Navigate to the "Build & Release" tab and click on "Builds". If you already have at least one build definition then skip to the next step, otherwise we are going to create one very quickly to get an import build option.
 
-* Click on the "+ New" button, select "Empty" definition and click "Next". On the next page click "Create". This will create an empty build definition with default settings. Click on "Save" and then "OK".
+* Click on the "+ Import" button.
 
-	![](<media/4.png>)
+![](<media/shot4.png>)
 
-* Click on "Build Definitions".
-	![](<media/27.png>)
+**Step 3.** Click on "Browse" and select `PartsUnlimited-CI.json` file in `templates\build definitions` of your repository. Then click on "Import" button.
 
-**Step 3.** Click on the ellipsis (...) button next to any build and click on "Import" option.
+![](<media/shot5.png>)
 
-![](<media/5.png>)
+**Step 4.** Once the import has done you will need to update some information. Click on the "process" heading and in the agent queue select hosted VS2017 in the hosted section. If this is already filled in please select the option with the VS logo beside it.
 
-**Step 4.** Click on "Browse" and select `dotnetcore CI HOL.json` file in `templates\build definitions` of your repository. Then click on "Import" button.
+![](<media/shot8.png>)
 
-![](<media/6.png>)
->**Note:** Since the template doesn't contain any information related to this project or this repository, it will take settings from the first build definition the extension finds.  That's why this extension requires at least one build definition to be there already.
+**Step 5.** Select the "Get Sources" bar.
 
-**Step 5.** If you had to define an empty build definition before, it can now be deleted by clicking on the ellipsis (...) button and selecting "Delete definition".
+![](<media/shot6.png>)
 
-![](<media/7.png>)
+**Step 6.** Make that that the branch that has been selected is "master" and it is using this project. 
 
-**Step 6.** Now, we need to define triggers for this imported build definition.
+![](<media/shot7.png>)
 
-1.  Click on the build definition and then click on "Edit"
-
-	![](<media/18.png>)
-
-2. Navigate to "Triggers" tab, check "Continuous integration (CI)" and make sure that your master branch is specified as a trigger. Click on "Save", then "OK".
-
-	![](<media/19.png>)
-
-**Step 7.**  At this stage it's a good idea to check that the imported build successfully builds your project. Trigger the new build with default settings by clicking on the "Queue new build..." button and then clicking on "OK".
-
-![](<media/8.png>)
-> **Note:** The build process may take a while, but there is no need to await its completion before proceeding.
-
-Congratulations, you have imported a build definition successfully.
-
-
+**Step 7.** Now just "Save & queue".
 
 ### Task 4: Continuous Deployment:
+
 **Step 1.** Navigate to the "Build & Release" tab and click on "Releases". If you already have at least one release definition then skip to the next step, otherwise we are going to create one very quickly to get an import release option.
 
-* Click on the "+ New definition" button and select "Empty" definition and click "Next". On the next page click "Create". This will create an empty release definition with default settings. Click on "Save" and "OK".  
+* Click on the "+ New definition" button and select "Empty" definition. This will create an empty release definition with default settings. Click on "Save" and "OK".
 
-	![](<media/9.png>)
+	![](<media/cdshot0a.png>)
 
-**Step 2.** To import a release template click on "+" button and select "Import release definition".
+	![](<media/cdshot0b.png>)
 
-![](<media/10.png>)
+**Step 2.** Navigate to the Releases heading, to import a release template click on "+" button and select "Import release definition".
 
-**Step 3.** Click on "Browse" and select `PartsUnlimited.json` file in `templates\release definitions` of your repository. Then click on "Import" button.
+![](<media/cdshot1.png>)
 
-![](<media/11.png>)
+**Step 3.** Click on "Browse" and select `Deployment.json` file in `templates\release definitions` of your repository. Then click on "Import" button.
 
-**Step 4.** Let's specify the artifacts(output from VSTS Build) for our release definition. Navigate to the " Artifacts" tab and click on "Link to an artifact source". Set it up as shown in the screenshot below and click "Link".
+![](<media/cdshot2.png>)
 
-![](<media/20.png>)
+**Step 4.** Everything that needs your attention will be listed in red.
 
-**Step 5.** Right after the import, you should see your tasks highlighted in red. For each tasks you may have to select your Azure subscription for the yellow field called "Azure RM Subscription".
-> The name of your Azure subscription should be 'Azure For PartsUnlimited' like descripted at the beginning of this HOL.
+![](<media/cdshot3.png>)
 
-![](<media/211.png>)
+**Step 5.** If you select to go in the tasks for "Dev" and select the Agent Phase you will see that Agent queue is in red. Select the Hosted VS2017 option. Then complete these steps again for the "Staging" and "Prod" environments.
 
-**Step 6.** The release definition's trigger is the key to the Continuous Deployment. To deploy on every successful build there has to be a trigger referencing the CI step completed above. Navigate to "Triggers" tab, tick "Continuous Deployment" and select the previously imported build definition.
+![](<media/cdshot4.png>)
 
-![](<media/21.png>)
+**Step 6.** Under the Azure Deployment you will need to update the "Azure subscription" and the "Location". This only needs to be done in the Dev Task.
 
-**Step 7.** Now we need to specify a deployment queue.
+![](<media/cdshot4a.png>)
 
-1. To do that click on the ellipsis (...) next to the "Dev" environment definition and select "Agent queue...".
+**Step 7.** You will need to select the Azure App Service and update the "Azure subscription" and the "Slot". For Slot you will need to fill in Dev for the Dev task, Staging for the Staging task. 
 
-	![](<media/12.png>)
+![](<media/cdshot4b.png>)
 
-2. Select a "Hosted" deployment queue and click "OK".
+**Step 6.** Navigate back to the Pipeline and you will see some pre- and post- deployment conditions where you need to select the approvers for the "Staging" and "Prod" steps.
 
-	![](<media/13.png>)
+![](<media/cdshot5.png>)
 
-3. Repeat these steps for the other two environments.
+**Step 7.** Select the Variables tab, followed by the Process variables. The issues here are the Passwords where you will need to select the "Lock" icon next to them and type in a new on. For the rest of the name please change these to a unique name by adding your initials to the end of them.
 
-**Step 8.** Our template cannot define approvers for your environments but it's a very good idea to have them for staging and production deployments.
-
-1. Click on the ellipsis (...) next to the "Staging" environment definition and select "Assign approvers...".
-
-	![](<media/14.png>)
-
-2. Set pre-deployment and post-deployment approvers. Also tick "Send an email notification to the approver whom the approval is pending on" and click "OK".
-
-	![](<media/15.png>)
-
-3. Similarly, specify a pre-deployment approver for the "Production" environment. A post-deployment approver will not be required here because production is the last deployment environment in this template.
-
-	![](<media/16.png>)
-
-4. The "Dev" environment creates/updates the architecture in Azure for all three environments before deploying to the "dev" slot. For this to work you need to define passwords for test and production databases.
-
-	* Click on the ellipsis (...) button next to the "Dev" environment and click on "Configure variables...".
-
-		![](<media/22.png>)
-
-	* Enter passwords for AdminPassword and AdminTestPassword variables.
-
-		![](<media/23.png>)
-		> **Note:** `AdminPassword` is the password for the production database. `AdminTestPassword` is the password for the test database.
-
-	* Change the values for the first fourth parameters by adding something unique like your initials at the end of the current one, for example in my case 'jstr', then click "OK".
-
-		![](<media/231.png>)
-		> **Note:** You have to use unique values on Azure, if not you may have an deployment error because someone is already using the same values.
-
-5. Like the previous step, you have to modify the global variales of this definition. Click on the 'Variables' section and add something unique like your initials at the end of the current one, for example in my case 'jstr', then click "OK". 
-Save the release definition by clicking on "Save" and "OK".
-
-	![](<media/232.png>)
+![](<media/cdshot6.png>)
 
 Congratulations, you have imported a release definition successfully.
-
 
 6. If you had to define an empty release definition before, then it can be now deleted by clicking on the dropdown arrow next to the empty definition and selecting "Delete".
 
@@ -210,10 +158,10 @@ Congratulations, you have imported a release definition successfully.
 Now that you have configured build and release definitions specifically for your repository in VSTS, it's a good idea to replace the given templates with your own.
 
 **Step 1.** Navigate to the "Build" tab. Click on the ellipsis (...) button next to the build definition you would like to export and select "Export". This will trigger a download of the build definition in JSON format. Place this file in the `templates\build definitions` directory of your local repository.
-![](<media/2.png>)
+![](<media/ex1.png>)
 
 **Step 2.** Navigate to the "Release" tab. Click on the dropdown arrow next to the release definition you would like to export and select "Export". This will trigger a download of the release definition in JSON format. Place this file in the `templates\release definitions` directory of your local repository.
-![](<media/3.png>)
+![](<media/ex2.png>)
 
 **Step 3.** Commit your changes using the following commands:
 
@@ -239,7 +187,7 @@ Once the deployment to the "dev" slot is completed, the pre-approver for the "St
 
 **Step 1.** To approve/reject the request navigate to the "Release" tab, click on ![](<media/26.png>) , optionally leave a comment and click on the "Approve" or "Reject" button.  
 
-![](<media/24.png>)
+![](<media/shot29.png>)
 
 > **Note:** The "Staging" environment also has a post-approver who must confirm that the app is stable and ready for the production environment. The pre-approver for the "Production" environment must also confirm before this final deployment.
 

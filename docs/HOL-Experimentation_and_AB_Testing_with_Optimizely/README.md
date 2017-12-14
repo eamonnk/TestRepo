@@ -11,7 +11,7 @@
 
 - Completed [Continuous Integration](https://github.com/Microsoft/PartsUnlimited/tree/master/docs/HOL-Continuous_Integration) and [Continuous Deployment](https://github.com/Microsoft/PartsUnlimited/tree/master/docs/HOL-Continuous_Deployment) HOLs
 
-- Visual Studio 2015 Update 3
+- Visual Studio 2017
 
 
 

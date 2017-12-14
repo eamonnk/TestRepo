@@ -7,7 +7,7 @@ The users will be able to self-subscribe to this feature. For your own projects 
 Note: [Launch Darkly](https://launchdarkly.com/) is a great option for more advanced feature flag management. Version 3.0.0 of the Launch Darkly SDK supports .NET core.
 
 ### Pre-requisites: ###
-- Visual Studio 2015 Update 3 or higher
+- Visual Studio 2017
 
 ### Tasks Overview: ###
 **Task 1. Add the backend code required for feature flags** - in this task we will add in the required code to enable feature flags for our application.
@@ -66,7 +66,7 @@ public class Feature
 - **Description** is going to be a brief description of what the feature flag is for.
 - **Active** is going to be the current state for the feature flag. 
 
-**Step 7.** We also want to add a property in ApplicationUser.cs called **ActiveFeatures**
+**Step 7.** We also want to add a property in `\PartsUnlimited\src\PartsUnlimited.Models\ApplicationUser.cs` called **ActiveFeatures**
 
 ```csharp
 public class ApplicationUser : IdentityUser
@@ -77,7 +77,7 @@ public class ApplicationUser : IdentityUser
 }
 ```
 
-**Step 8.** Now we want to create a simple feature manager class. This will be used later on to toggle our features on and off. Under the same FeatureFlag folder create a new class called **FeatureManager.cs**
+**Step 8.** Now we want to create a simple feature manager class. This will be used later on to toggle our features on and off. Under the same `FeatureFlag` folder create a new class called **FeatureManager.cs**
 
 ```csharp
 using System;
@@ -159,9 +159,9 @@ Now let's explain the sections of the above code.
 - **ChangeFeatureToggles** takes in a list of selected feature toggles and a user. If the key exists that status will be toggled for that user.
 - **GetUserFeatures** will get the current list of active features for a given user.
 
-*Note: In a real world implementation we would store these flags in a database. For simplicity's sake we have stored them in memory. This also gives you the ability to extenalize the on/off switch for your features*
+*Note: In a real world implementation we would store these flags in a database. For simplicity's sake we have stored them in memory. This also gives you the ability to externalize the on/off switch for your features*
 
-We also want to set up our dependency injection for the FeatureManager. Navigate to Startup.cs and add the service binding shown below.
+We also want to set up our dependency injection for the FeatureManager. Navigate to `\PartsUnlimited\src\PartsUnlimitedWebsite\Startup.cs` and add the service binding shown below.
 
 ```csharp
 ...
@@ -180,7 +180,7 @@ public class Startup
 }
 ```
 
-**Step 9.** Now that we have the basics set up let's create our first actual feature. We want to display a different placeholder and utilize HTML5 validation for updating phone numbers. In ManageViewModels.cs we want to add an additional properties on the AddPhoneNumberViewModel class. This will be used on the view to check if the new phone number feature is active.
+**Step 9.** Now that we have the basics set up let's create our first actual feature. We want to display a different placeholder and utilize HTML5 validation for updating phone numbers. In `\PartsUnlimited\src\PartsUnlimitedWebsite\Models\ManageViewModels.cs` we want to add an additional properties on the AddPhoneNumberViewModel class. This will be used on the view to check if the new phone number feature is active.
 
 ```csharp
     ...
@@ -192,7 +192,7 @@ public class Startup
     ...
 ```
 
-In ManageController.cs we want to alter two of the existing methods. This is located here -> `.\PartsUnlimited\src\PartsUnlimitedWebsite\Controllers\ManageController.cs`
+In ManageController.cs we want to alter two of the existing methods. This is located at `\PartsUnlimited\src\PartsUnlimitedWebsite\Controllers\ManageController.cs`
 
 Note the `AddPhoneNumber()` method already exists but we need to change a few things. This needs to become an async method that returns `Task<IActionResult>`. Replace the whole method with the one below.
 
@@ -201,7 +201,7 @@ Also for the `AddPhoneNumber(AddPhoneNumberViewModel model)` we will be replacin
 ```csharp
 using System;
 ...
-using PartsUnlimited.FeatureFlag;
+using PartsUnlimitedWebsite.FeatureFlag;
 
 public class ManageController : Controller
 {
@@ -238,7 +238,7 @@ public class ManageController : Controller
 }
 ```
 
-**Step 10.** Now we want to conditionally display a block of code relating to the new feature. Navigate to AddPhoneNumber.cshtml
+**Step 10.** Now we want to conditionally display a block of code relating to the new feature. Navigate to `PartsUnlimited\src\PartsUnlimitedWebsite\Views\Manage\AddPhoneNumber.cshtml`
 
 Find the following line of code in the same file (**AddPhoneNumber.cshtml**), located at line 20.
 
@@ -290,7 +290,7 @@ At the bottom of the file, under the closing section tag, add the following
 ```
 
 
-**Step 11.** We also want to make sure that the proper CSS is applied for the HTML5 validation. Navigate to **Site.scss** (located in `./PartsUnlimited/src/PartsUnlimitedWebsite/Content/Site.scss`)
+**Step 11.** We also want to make sure that the proper CSS is applied for the HTML5 validation. Navigate to **Site.scss** (located in `/PartsUnlimited/src/PartsUnlimitedWebsite/Content/Site.scss`)
 
 **Step 12.** Add the following to Site.scss - this will ensure a red border is applied when the pattern or input field type is invalid.
 
@@ -302,7 +302,7 @@ Now we need to create an administration view to toggle these features on and off
 
 **Step 1.** In order to create a new page on the site, we need to create a ViewModel that will represent the data we need to use on that page. 
 
-Under the `./PartsUnlimited/src/PartsUnlimitedWebsite/ViewModels` folder, create a new class called FeaturesViewModel.cs
+Under the `/PartsUnlimited/src/PartsUnlimitedWebsite/ViewModels` folder, create a new class called FeaturesViewModel.cs
 
 ```csharp
 using System.Collections.Generic;
@@ -319,7 +319,7 @@ namespace PartsUnlimited.ViewModels
 
 ```
 
-**Step 2.** Navigate to `./PartsUnlimited/src/PartsUnlimitedWebsite/Controllers` and create a new controller called **FeaturesController.cs**
+**Step 2.** Navigate to `/PartsUnlimited/src/PartsUnlimitedWebsite/Controllers` and create a new controller called **FeaturesController.cs**
 
 ```csharp
 using System;
@@ -423,7 +423,7 @@ namespace PartsUnlimited.Controllers
 <br /><br />
 ```
 
-**Step 5.** We need to link to our new page. Navigate to PartsUnlimitedWebsite -> Views -> Shared -> _Login.cshtml
+**Step 5.** We need to link to our new page. Navigate to `PartsUnlimited\src\PartsUnlimitedWebsite\Views\Shared\_Login.cshtml`
 
 Add the following list item to the bottom of the menu.
 

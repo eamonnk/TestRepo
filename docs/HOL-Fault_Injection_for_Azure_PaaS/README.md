@@ -7,7 +7,7 @@ Your manager has expressed interest in the stability and fault-tolerance of the 
 
 ## Pre-requisites:
 
-* [Visual Studio 2015 Update 3](https://www.visualstudio.com/downloads/)
+* [Visual Studio 2017](https://www.visualstudio.com/downloads/)
 
 * Latest [Azure SDK 2.9.5](https://www.microsoft.com/en-us/download/details.aspx?id=53600) installed
 

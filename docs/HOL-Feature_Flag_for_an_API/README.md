@@ -7,9 +7,9 @@ The project manager decided to roll out a new feature but it has to be done one 
 
 - Azure account with an active subscription.
 
-- Visual Studio 2015 Update 3
+- Visual Studio 2017
 
-- [.Net Core 1.0.1 SDK](https://www.microsoft.com/net/core#windows) installed
+- [.Net Core 2 SDK](https://www.microsoft.com/net/download/core) installed
 
 - [Windows SDK and emulator](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive) installed  
 
@@ -51,7 +51,7 @@ Let's get the PartsUnlimited's source code. If you already have the source code 
 
 ### Task 2: Create API endpoints ###
 
-**Step 1.** Open Visual Studio as administrator. Open Start menu, locate Visual Studio 2015, right click on it, select "More" and then click on "Run as administrator".
+**Step 1.** Open Visual Studio as administrator. Open Start menu, locate Visual Studio 2017, right click on it, select "More" and then click on "Run as administrator".
 
 ![](media/1.png)
 
@@ -75,7 +75,7 @@ Let's get the PartsUnlimited's source code. If you already have the source code 
 
      ![](media/5.png)
 
-3. Select `Web API` template, uncheck the "Host in the cloud" box and click on "OK".
+3. Select that it is a `.NET Core` and `ASP .NET Core 2.0` project under the 2 top drop down options. Then Select `Web API` template and click on "OK".
 
      ![](media/6.png)
 
@@ -241,23 +241,20 @@ Let's get the PartsUnlimited's source code. If you already have the source code 
 
     ![](media/8.png)
 
-2. Select `Microsoft Azure App Service` as a deployment target.
+2. Select `Microsoft Azure App Service` as a deployment target, make sure the Create New option is selected and then `Publish`.
 
     ![](media/9.png)
 
-3. Click on "New...".
-  
-    ![](media/10.png)
-
-4. Select your subscription, create a new "Resource Group" and "App Service Plan", then click on "Create".
+3. Select your subscription, create a new "Resource Group" and "App Service Plan", then click on "Create".
 
     ![](media/11.png)
+    >**Note** This may take some time to finish the creating process. 
 
-5. After the new resource group and app service is created, click on "Publish".
+4. After the new resource group and app service is created, click on "Publish".
 
     ![](media/12.png)
 
-6. After deployment is finished, URL link to the App Service will be opened in your default browser. Add `api/v1/specials/getbytheuserid?id=1` at the end and see the output of your API. Try out `api/v2/specials/getbytheuserid?id=1` as well, it should return a slightly different JSON back. Note the URI, you will need it later on for Azure Function.
+5. After deployment is finished, URL link to the App Service will be opened in your default browser. Add `api/v1/specials/getbytheuserid?id=1` at the end and see the output of your API. Try out `api/v2/specials/getbytheuserid?id=1` as well, it should return a slightly different JSON back. Note the URI, you will need it later on for Azure Function.
 
     ![](media/13.png)
     ![](media/14.png)
